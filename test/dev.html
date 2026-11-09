@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lionel Train Card dev</title>
+<style>
+  body { margin:0; padding:16px; background:#111318; font-family:Roboto,system-ui,sans-serif;
+    --primary-text-color:#e8e8ec; --secondary-text-color:#9a9aa6; --secondary-background-color:#26262b;
+    --card-background-color:#1c1c1f; --divider-color:rgba(255,255,255,.12); --primary-color:#03a9f4; }
+  body.light { background:#f2f3f6; --primary-text-color:#1d1d20; --secondary-text-color:#6b6b75;
+    --secondary-background-color:#eef0f3; --card-background-color:#fff; --divider-color:rgba(0,0,0,.12); }
+  ha-card { display:block; background:var(--card-background-color); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.25); }
+  .wrap { max-width:460px; margin:0 auto; }
+</style></head>
+<body><div class="wrap"><lionel-train-card id="card"></lionel-train-card></div>
+<script>
+customElements.define('ha-card', class extends HTMLElement {});
+window.q = new URLSearchParams(location.search);
+if (window.q.get('theme') === 'light') document.body.classList.add('light');
+const DEV = 'dev_polar';
+const p = 'polar_express';
+const ents = {}, states = {};
+const add = (domain, key, state, tk = key, attrs = {}) => {
+  const id = `${domain}.${p}_${key}`;
+  ents[id] = { entity_id: id, device_id: DEV, platform: 'lionel_controller', translation_key: tk };
+  states[id] = { entity_id: id, state, attributes: attrs };
+};
+const connected = window.q.get('state') !== 'reconnecting';
+add('binary_sensor', 'connection', connected ? 'on' : 'off');
+add('number', 'throttle', window.q.get('speed') ?? '35');
+for (const v of ['master', 'horn', 'bell', 'speech', 'engine']) add('number', `${v}_volume`, '5');
+add('switch', 'lights', window.q.get('lights') ?? 'on');
+add('switch', 'auto_reconnect', 'on');
+add('switch', 'horn_sound', 'off');
+add('switch', 'bell_ringing', window.q.get('bell') ?? 'off');
+for (const b of ['connect', 'disconnect', 'stop', 'forward', 'reverse', 'horn', 'bell']) add('button', b, 'unknown');
+for (const a of ['random', 'ready_to_roll', 'hey_there', 'squeaky', 'water_and_fire', 'fastest_freight', 'penna_flyer'])
+  add('button', `announcement_${a}`, 'unknown', 'announcement');
+add('sensor', 'direction', window.q.get('dir') ?? 'forward');
+add('sensor', 'train_model', 'Polar Express');
+add('sensor', 'status', '00450b');
+states['sun.sun'] = { entity_id: 'sun.sun', state: window.q.get('sun') ?? 'above_horizon', attributes: {} };
+window.calls = [];
+window.hass = {
+  states, entities: ents,
+  devices: { [DEV]: { id: DEV, name: 'LC-0-1-0401-3150', name_by_user: 'Polar Express' } },
+  callService: async (d, s, data) => { window.calls.push([d, s, data]); console.log('svc', d, s, JSON.stringify(data)); },
+};
+</script>
+<script type="module">
+import '../dist/lionel-train-card.js';
+await customElements.whenDefined('lionel-train-card');
+const card = document.getElementById('card');
+card.setConfig({ type: 'custom:lionel-train-card', device_id: 'dev_polar', show_3d: window.q.get('3d') !== 'off',
+  time_of_day: window.q.get('tod') || 'auto' });
+card.hass = window.hass;
+</script></body></html>

@@ -1,88 +1,51 @@
 # Lionel Train Card
 
-A custom Lovelace card for controlling Lionel LionChief trains in Home Assistant.
+A Home Assistant dashboard card for driving a Lionel LionChief locomotive, with a 3D view of a snowy
+layout where your train runs at the speed you set.
 
-![Lionel Train Card](https://raw.githubusercontent.com/BlackandBlue1908/lionel-train-card/main/images/card-preview.png)
+Requires the [Lionel Train Controller](https://github.com/BlackandBlue1908/ha_lionel_controller)
+integration, version 2.1 or later (for press-and-hold horn and continuous bell).
 
-## Features
+## What's on the card
 
-- **Large throttle slider** with color gradient (green → yellow → red)
-- **Direction controls** (Forward/Reverse)
-- **Quick access buttons** for Horn, Bell, Lights
-- **Emergency Stop** button
-- **Connection status** indicator
-- **Disconnect** button
+- **3D layout** (optional): the train moves with the throttle, runs backward in reverse, and its headlight
+  follows the Lights switch. Day or night follows the sun (`sun.sun`), or pick one. The scene only renders while
+  it's on screen, and three.js is downloaded only when the 3D view is shown.
+- **Throttle**: notched slider. Sends at most one command every 150 ms while you drag, and the final value on release.
+- **Reverse / Forward** shows the active direction; **STOP** sits next to the throttle.
+- **Horn**: tap for a short blast, hold to sound until you let go. **Bell**: tap to start or stop ringing.
+  **Lights** toggle.
+- **Announcements**, named for your train model (Polar Express names included).
+- **Settings**: volumes and automatic reconnection. Connect / Disconnect.
+- Greys out with **Reconnecting…** while the Bluetooth link is down. Uses your theme's colours (light and dark).
 
-## Requirements
+## Configuration
 
-This card requires the [Lionel Train Controller](https://github.com/BlackandBlue1908/ha_lionel_controller) integration to be installed.
-
-## Installation
-
-### HACS (Recommended)
-
-1. Open HACS in Home Assistant
-2. Go to "Frontend"
-3. Click the three dots menu and select "Custom repositories"
-4. Add `https://github.com/BlackandBlue1908/lionel-train-card` as a "Lovelace"
-5. Install "Lionel Train Card"
-6. Refresh your browser (Ctrl+F5)
-
-### Manual Installation
-
-1. Download `lionel-train-card.js` from the [latest release](https://github.com/BlackandBlue1908/lionel-train-card/releases)
-2. Copy it to `/config/www/lionel-train-card.js`
-3. Add the resource in Home Assistant:
-   - Go to **Settings → Dashboards → Resources**
-   - Click **Add Resource**
-   - URL: `/local/lionel-train-card.js`
-   - Resource type: JavaScript Module
-4. Refresh your browser
-
-## Usage
-
-Add the card to your dashboard:
+Add it from the dashboard editor (search "Lionel") and pick your train. YAML:
 
 ```yaml
 type: custom:lionel-train-card
-entity: number.lc_xxxx_throttle
-name: My Lionel Train
+device_id: <your train's device id>   # the editor fills this in
+name: Polar Express                   # optional
+show_3d: true                         # optional, default true
+time_of_day: auto                     # auto (follow the sun) | day | night
 ```
 
-### Configuration Options
+Cards from 2.x that used `device: Polar Express` keep working.
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `entity` | string | Yes | The throttle entity ID (e.g., `number.lc_1234_throttle`) |
-| `name` | string | No | Display name for the card (default: "Lionel Train") |
+## Installation
 
-### Finding Your Entity
+HACS → Frontend → ⋮ → Custom repositories → add this repo as **Dashboard**, install, refresh the browser.
+Both `lionel-train-card.js` and `lionel-train-3d.js` from `dist/` must be served from the same folder.
 
-1. Go to **Developer Tools → States**
-2. Search for your train's throttle entity (it ends with `_throttle`)
-3. Use that entity ID in the card configuration
+## Development
 
-## Card Controls
-
-| Control | Description |
-|---------|-------------|
-| **Throttle** | Slide to control train speed (0-100%) |
-| **Forward** | Set train direction to forward |
-| **Reverse** | Set train direction to reverse |
-| **Lights** | Toggle train lights on/off |
-| **Horn** | Sound the horn |
-| **Bell** | Ring the bell |
-| **Disconnect** | Disconnect from the train |
-| **Emergency Stop** | Immediately stop the train |
-
-## Screenshots
-
-*Coming soon*
-
-## Support
-
-If you encounter issues, please [open an issue](https://github.com/BlackandBlue1908/lionel-train-card/issues) on GitHub.
+```bash
+npm install
+npm run build      # dist/lionel-train-card.js + dist/lionel-train-3d.js
+npx http-server .  # then open test/dev.html (mock Home Assistant; ?sun=below_horizon, ?state=reconnecting, ?3d=off, ?theme=light)
+```
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT
